@@ -25,7 +25,14 @@ if config.config_file_name is not None:
 # target_metadata = mymodel.Base.metadata
 
 from models import Base
+from config import DATABASE_URL
+
 target_metadata = Base.metadata
+
+# A URL real fica no .env (ou nas variaveis do ambiente de deploy), nunca no
+# alembic.ini versionado. O ConfigParser interpreta '%' como interpolacao, por
+# isso percentuais de credenciais codificadas precisam ser escapados aqui.
+config.set_main_option("sqlalchemy.url", DATABASE_URL.replace("%", "%%"))
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
