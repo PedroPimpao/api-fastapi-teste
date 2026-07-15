@@ -9,6 +9,9 @@ auth_router = APIRouter(prefix="/auth", tags=["auth"])
 
 @auth_router.get('/')
 async def home():
+    """
+    Essa é a rota padrão de autenticação do sistema.
+    """
     return {"message": "Home Auth Route"}
 
 @auth_router.post("/create-account")
