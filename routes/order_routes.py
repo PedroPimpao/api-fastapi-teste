@@ -6,6 +6,8 @@ from models import Pedidos, Usuario
 
 order_router = APIRouter(prefix="/orders", tags=["orders"], dependencies=[Depends(verify_token)])
 
+authorization_error_message = 'You don`t have permission to do this action'
+
 @order_router.get("/")
 async def orders_home():
     """
@@ -23,7 +25,7 @@ async def create_order(order_schema: OrderSchema, session: Session = Depends(get
 async def cancel_order(orderId: int, session: Session = Depends(get_session), user: Usuario = Depends(verify_token)):
     order = session.query(Pedidos).filter(Pedidos.id == orderId).first()
     if not user.admin and user.id != order.usuario:
-        raise HTTPException(status_code=401, detail='You don`t have permission to do this action')
+        raise HTTPException(status_code=401, detail=authorization_error_message)
     if not order:
         raise HTTPException(status_code=400, detail='Order not found')
     order.status = 'CANCELADO'
@@ -32,3 +34,14 @@ async def cancel_order(orderId: int, session: Session = Depends(get_session), us
         "message": f"Pedido {order.id} cancelado com sucesso",
         "order": order
     }
+
+@order_router.get('/list')
+async def list_orders(session: Session = Depends(get_session), user: Usuario = Depends(verify_token)):
+    if not user.admin:
+        raise HTTPException(status_code=401, detail=authorization_error_message)
+    else: 
+        orders = session.query(Pedidos).all()
+        return {
+            "orders": orders
+        }
+
