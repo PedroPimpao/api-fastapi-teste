@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from dependencies import get_session
+from dependencies import get_session, verify_token
 from schemas import OrderSchema
-from models import Pedidos
+from models import Pedidos, Usuario
 
-order_router = APIRouter(prefix="/orders", tags=["orders"])
+order_router = APIRouter(prefix="/orders", tags=["orders"], dependencies=[Depends(verify_token)])
 
 @order_router.get("/")
 async def orders_home():
@@ -18,3 +18,17 @@ async def create_order(order_schema: OrderSchema, session: Session = Depends(get
     session.add(new_order)
     session.commit()
     return {"message": f"Pedido criado com sucesso. ID do Pedido: {new_order.id}"}
+
+@order_router.post("/order/cancel/{orderId}")
+async def cancel_order(orderId: int, session: Session = Depends(get_session), user: Usuario = Depends(verify_token)):
+    order = session.query(Pedidos).filter(Pedidos.id == orderId).first()
+    if not user.admin and user.id != order.usuario:
+        raise HTTPException(status_code=401, detail='You don`t have permission to do this action')
+    if not order:
+        raise HTTPException(status_code=400, detail='Order not found')
+    order.status = 'CANCELADO'
+    session.commit()
+    return {
+        "message": f"Pedido {order.id} cancelado com sucesso",
+        "order": order
+    }
