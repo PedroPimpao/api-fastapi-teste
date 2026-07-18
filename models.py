@@ -43,6 +43,9 @@ class Pedidos(Base):
         self.status = status
         self.usuario = usuario
         self.preco = preco
+    
+    def calcular_preco(self):
+        self.preco = 10
 
 class ItemPedido(Base):
     __tablename__ = "itens_pedido"

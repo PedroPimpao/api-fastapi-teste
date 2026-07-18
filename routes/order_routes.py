@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from dependencies import get_session, verify_token
-from schemas import OrderSchema
-from models import Pedidos, Usuario
+from schemas import OrderSchema, OrderItemSchema
+from models import Pedidos, Usuario, ItemPedido
 
 order_router = APIRouter(prefix="/orders", tags=["orders"], dependencies=[Depends(verify_token)])
 
@@ -44,4 +44,22 @@ async def list_orders(session: Session = Depends(get_session), user: Usuario = D
         return {
             "orders": orders
         }
+
+@order_router.post('/order/add-item/{orderId}')
+async def add_item(orderId: int, orderItemSchema: OrderItemSchema, session: Session = Depends(get_session), user: Usuario = Depends(verify_token)):
+    order = session.query(Pedidos).filter(Pedidos.id == orderId).first()
+    if not order:
+        raise HTTPException(status_code=400, detail='Order not found')
+    if not user.admin and user.id != order.usuario:
+        raise HTTPException(status_code=401, detail=authorization_error_message)
+    order_item = ItemPedido(orderItemSchema.amount, orderItemSchema.flavor, orderItemSchema.size, orderItemSchema.unit_price, orderId)
+    order.calcular_preco()
+    session.add(order_item)
+    session.commit()
+    return {
+        "message": "Item added successfully",
+        "item_id": order_item.id,
+        "order_price": order.preco
+    }
+
 
