@@ -1,6 +1,6 @@
 from config import DATABASE_URL
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, Float, ForeignKey
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy_utils import ChoiceType
 
 db = create_engine(DATABASE_URL)
@@ -37,7 +37,7 @@ class Pedidos(Base):
     status = Column("status", String) # pendente, cancelado, finalizado
     usuario = Column("usuario", ForeignKey("usuarios.id"))
     preco = Column("preco", Float)
-    # itens =
+    itens = relationship("ItemPedido", cascade="all, delete")
 
     def __init__(self, usuario, status="PENDENTE", preco=0):
         self.status = status
@@ -45,7 +45,12 @@ class Pedidos(Base):
         self.preco = preco
     
     def calcular_preco(self):
-        self.preco = 10
+        # order_price = 0
+        # for item in self.itens:
+        #     item_price = item.preco_unitario * item.quantidade
+        #     order_price += item_price
+
+        self.preco = sum(item.preco_unitario * item.quantidade for item in self.itens)  
 
 class ItemPedido(Base):
     __tablename__ = "itens_pedido"
@@ -63,3 +68,7 @@ class ItemPedido(Base):
         self.tamanho = tamanho
         self.preco_unitario = preco_unitario
         self.pedido = pedido
+
+# Migrar o DB
+# Criar migração: alembic revision --autogenerate -m "Nome da migracao"
+# Executar migração: alembic upgrade head

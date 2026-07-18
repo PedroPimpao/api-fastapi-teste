@@ -53,8 +53,8 @@ async def add_item(orderId: int, orderItemSchema: OrderItemSchema, session: Sess
     if not user.admin and user.id != order.usuario:
         raise HTTPException(status_code=401, detail=authorization_error_message)
     order_item = ItemPedido(orderItemSchema.amount, orderItemSchema.flavor, orderItemSchema.size, orderItemSchema.unit_price, orderId)
-    order.calcular_preco()
     session.add(order_item)
+    order.calcular_preco()
     session.commit()
     return {
         "message": "Item added successfully",
