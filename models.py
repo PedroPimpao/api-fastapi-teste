@@ -45,11 +45,6 @@ class Pedidos(Base):
         self.preco = preco
     
     def calcular_preco(self):
-        # order_price = 0
-        # for item in self.itens:
-        #     item_price = item.preco_unitario * item.quantidade
-        #     order_price += item_price
-
         self.preco = sum(item.preco_unitario * item.quantidade for item in self.itens)  
 
 class ItemPedido(Base):
