@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from dependencies import get_session, verify_token
-from schemas import OrderSchema, OrderItemSchema
+from schemas import OrderSchema, OrderItemSchema, ResponseOrderSchema
 from models import Pedidos, Usuario, ItemPedido
+from typing import List
 
 order_router = APIRouter(prefix="/orders", tags=["orders"], dependencies=[Depends(verify_token)])
 
@@ -100,25 +101,18 @@ async def finish_order(orderId: int, session: Session = Depends(get_session), us
         "order": order
     }
 
-@order_router.get('/order/{ordeId}')
+@order_router.get('/order/{orderId}', response_model=ResponseOrderSchema)
 async def get_order(orderId: int, session: Session = Depends(get_session), user: Usuario = Depends(verify_token)):
     order = session.query(Pedidos).filter(Pedidos.id == orderId).first()
-    if not user.admin and user.id != order.usuario:
-        raise HTTPException(status_code=401, detail=authorization_error_message)
     if not order:
-        raise HTTPException(status_code=400, detail='Order not found')
-    return {
-        "message": f"Pedido {order.id} encontrado com sucesso",
-        "order": order,
-        "itens": order.itens
-    }
+        raise HTTPException(status_code=404, detail='Order not found')
+    if not user.admin and user.id != order.usuario:
+        raise HTTPException(status_code=403, detail=authorization_error_message)
+    return order
 
-@order_router.get('/list/{userId}')
+@order_router.get('/list/{userId}', response_model=List[ResponseOrderSchema])
 async def list_user_orders(userId: int, session: Session = Depends(get_session), user: Usuario = Depends(verify_token)):
     orders = session.query(Pedidos).filter(Pedidos.usuario == userId).all()
     if not user.admin and user.id != userId:
         raise HTTPException(status_code=401, detail=authorization_error_message)
-    else: 
-        return {
-            "orders": orders
-        }
+    return orders

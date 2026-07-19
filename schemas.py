@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from typing import Optional
+from pydantic import BaseModel, ConfigDict, Field
+from typing import Optional, List
 
 class UserSchema(BaseModel):
     name: str
@@ -25,10 +25,17 @@ class LoginSchema(BaseModel):
         from_attributes = True
     
 class OrderItemSchema(BaseModel):
-    amount: int
-    flavor: str
-    size: str
-    unit_price: float
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-    class Config:
-        from_attributes = True
+    amount: int = Field(validation_alias="quantidade")
+    flavor: str = Field(validation_alias="sabor")
+    size: str = Field(validation_alias="tamanho")
+    unit_price: float = Field(validation_alias="preco_unitario")
+
+class ResponseOrderSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    status: str
+    preco: float
+    itens: List[OrderItemSchema]
